@@ -1,0 +1,36 @@
+with fechas as (
+  select distinct submission_date ,
+dense_rank() over(order by submission_date) as cantidad_dias
+from submissions 
+), hacker_mayor_envios as (
+  
+   select x.*, w.name from(
+   select *, row_number() over(partition by submission_date order by es_valor_maximo desc,  hacker_id asc ) as orden_puntaje from(
+   select *, iif( max(cantidad_envios_hacker) over(partition by submission_date) = cantidad_envios_hacker, 1, 0) as es_valor_maximo
+   from 
+   (
+   select submission_date , hacker_id,
+          count(hacker_id) over(partition by submission_date, hacker_id) as cantidad_envios_hacker          
+    from submissions 
+  ) z ) y ) x 
+  join hackers  w on x.hacker_id = w.hacker_id
+  where x.orden_puntaje = 1
+
+)
+select a.submission_date,
+(select count(distinct c.hacker_id) from submissions c
+inner join 
+ (select hacker_id
+   from submissions where 
+submission_date <= a.submission_date
+group by hacker_id
+   having count(distinct submission_date) = a.cantidad_dias) b 
+ on c.hacker_id = b.hacker_id
+ 
+ where c.submission_date = a.submission_date
+) as cantidad_unicos,
+ff.hacker_id, ff.name
+from fechas a 
+join hacker_mayor_envios ff
+on a.submission_date = ff.submission_date
+order by a.submission_date

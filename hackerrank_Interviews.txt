@@ -1,0 +1,24 @@
+with subs as(
+    select college_id, sum(total_submissions) as c1, sum(total_accepted_submissions) as c2
+      from Submission_Stats a join Challenges b on a.challenge_id = b.challenge_id 
+      GROUP by college_id
+
+), views as(
+    select college_id, sum(total_views) as c1, sum(total_unique_views) as c2
+      from View_Stats a join Challenges b on a.challenge_id = b.challenge_id 
+      GROUP by college_id
+)
+select * FROM
+(
+select a.*, 
+SUM(ISNULL(e.c1, 0)) as c1,
+SUM(ISNULL(e.c2, 0)) as c2,
+SUM(ISNULL(d.c1, 0)) as c3,
+SUM(ISNULL(d.c2, 0)) as c4 from 
+contests a 
+join Colleges b on a.contest_id = b.contest_id
+left join views d on b.college_id = d.college_id
+left join subs e on b.college_id = e.college_id
+    group by a.contest_id, a.hacker_id, a.name
+) a where (c1 + c2 + c3 + c4) > 0
+

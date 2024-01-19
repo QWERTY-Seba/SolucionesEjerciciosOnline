@@ -1,0 +1,15 @@
+select hacker_id, name, cantidad_desafios from(
+select * ,
+iif(cantidad_desafios = max(cantidad_desafios) over(), 1, 0) as conservar_duplicado
+, 
+count(cantidad_desafios) over(partition by cantidad_desafios) as quitar_mas_de_1
+from 
+(
+select a.hacker_id , b.name, count(a.hacker_id) as cantidad_desafios from 
+Challenges a
+join hackers b on a.hacker_id = b.hacker_id
+group by a.hacker_id, b.name
+) a ) b 
+
+where quitar_mas_de_1 = 1 or conservar_duplicado = 1
+order by 3 desc,1 asc
